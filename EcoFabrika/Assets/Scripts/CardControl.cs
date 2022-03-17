@@ -16,6 +16,8 @@ public class CardControl : MonoBehaviour
     public float choice;
     public GameObject card;
 
+    [SerializeField] private float cardValidateSpeed = 100;
+
     public CardManager cardManager;
     public CardIdentity cardIdentity;
 
@@ -23,6 +25,7 @@ public class CardControl : MonoBehaviour
     public float maxSuggestion;
 
     public float timeReturn;
+
     private float timeReturnCountdown = 0.0f;
 
 
@@ -35,9 +38,12 @@ public class CardControl : MonoBehaviour
 
     private Vector3 cardPosEndInput;
     private float tReturn;
-    private SpriteRenderer spriteRenderer;
     private bool ChangeCard;
 
+    private MeshRenderer meshRenderer;
+    private Vector3 lastMousePos = new Vector2();
+
+    public Texture2D tex;
 
     private void Start()
     {
@@ -48,12 +54,17 @@ public class CardControl : MonoBehaviour
         InitComponent();
         SetupNewCard(0);
 
+
+        
+        lastMousePos = Input.mousePosition;
+        
+
     }
 
     private void InitComponent()
     {
         cardManager = GetComponent<CardManager>();
-        spriteRenderer = card.GetComponent<SpriteRenderer>();
+        meshRenderer = card.GetComponent<MeshRenderer>();
     }
 
     void Update()
@@ -79,6 +90,8 @@ public class CardControl : MonoBehaviour
         }
 
 
+        lastMousePos = Input.mousePosition;
+
     }
 
 
@@ -92,7 +105,9 @@ public class CardControl : MonoBehaviour
         if (cardState == CardState.Neutral) UpdateCardNeutralState();
         if (cardState == CardState.Choice) UpdateCardChoiceState((int)choice);
 
-        card.transform.position = new Vector3(0.7f * percentMousePos.x / 100.0f, 0f, 0f);
+        float cardPos = 0.7f * percentMousePos.x / 100.0f;
+        cardPos = Mathf.Clamp(cardPos, -0.7f, 0.7f);
+        card.transform.position = new Vector3(cardPos, 0f, 0f);
         cardPosEndInput = card.transform.position;
         timeReturnCountdown = 0.0f;
     }
@@ -125,8 +140,11 @@ public class CardControl : MonoBehaviour
         }
         if (Mathf.Abs(percentMousePos.x) > maxSuggestion)
         {
-            choice = Mathf.Sign(percentMousePos.x);
-            cardState = CardState.Choice;
+            if (GetMouseSpeed() > cardValidateSpeed)
+            {
+                choice = Mathf.Sign(percentMousePos.x);
+                cardState = CardState.Choice;
+            }
 
         }
         if (Mathf.Abs(percentMousePos.x) < minSuggestion)
@@ -136,6 +154,14 @@ public class CardControl : MonoBehaviour
         }
 
     }
+
+    private float GetMouseSpeed()
+    {
+        Vector3 mouseDelta = Input.mousePosition - lastMousePos;
+
+        return mouseDelta.magnitude;
+    }
+
 
     private void UpdateCardSuggestionState(Vector3 percentMousePos)
     {
@@ -148,7 +174,9 @@ public class CardControl : MonoBehaviour
         for (int i = 0; i < 3; i++)
         {
             float sizeMouvement = (Mathf.Abs((Screen.width / 2.0f) - rectArray[i].rect.width / 2.0f));
-            rectArray[i].localPosition = new Vector3(sizeMouvement * (percentMousePos.x / 100.0f), rectArray[i].localPosition.y, 0f);
+            float pos = sizeMouvement * (percentMousePos.x / 100.0f);
+            pos = Mathf.Clamp(pos, -sizeMouvement, sizeMouvement);
+            rectArray[i].localPosition = new Vector3(pos, rectArray[i].localPosition.y, 0f);
         }
     }
 
@@ -173,13 +201,14 @@ public class CardControl : MonoBehaviour
             SetupNewCard(cardIdentity.choiceID[1]);
         }
 
-
     }
 
     private void SetupNewCard(int index)
     {
         cardIdentity = cardManager.cardIdentities[index];
-        spriteRenderer.sprite = cardIdentity.cardSprite;
+        text1.text = cardIdentity.choiceText1;
+        text2.text = cardIdentity.choiceText2;
+        meshRenderer.material.mainTexture = cardIdentity.cardSprite ;
         ChangeCard = false;
     }
 

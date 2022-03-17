@@ -13,7 +13,11 @@ public struct CardIdentity
 {
     public CardType cardType;
     public int[] choiceID;
-    public Sprite cardSprite;
+    public Texture2D cardSprite;
+    [TextArea]
+    public string choiceText1;
+    [TextArea]
+    public string choiceText2;
 }
 
 public class CardManager : MonoBehaviour
