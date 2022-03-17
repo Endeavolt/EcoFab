@@ -43,6 +43,10 @@ public class CardControl : MonoBehaviour
     private MeshRenderer meshRenderer;
     private Vector3 lastMousePos = new Vector2();
 
+    [SerializeField] private float _choiceTransitionDuration = 1.0f;
+    private float _timer;
+    private bool _transition;
+
     public Texture2D tex;
 
     private void Start()
@@ -55,9 +59,9 @@ public class CardControl : MonoBehaviour
         SetupNewCard(0);
 
 
-        
+
         lastMousePos = Input.mousePosition;
-        
+
 
     }
 
@@ -72,21 +76,27 @@ public class CardControl : MonoBehaviour
 
         if (Input.GetMouseButton(0))
         {
-            if (ChangeCard)
+            if (!_transition)
             {
-                if (cardIdentity.cardType == CardType.Choice) ChoiceControl();
-                else SetupNewCard(cardIdentity.choiceID[0]);
-            }
-            else
-            {
-                ResetCardState();
+                if (ChangeCard)
+                {
+                    if (cardIdentity.cardType == CardType.Choice) ChoiceControl();
+                    else SetupNewCard(cardIdentity.choiceID[0]);
+                }
+                else
+                {
+                    ResetCardState();
+                }
             }
 
         }
         else
         {
             ChangeCard = true;
-            ResetCardState();
+            if (!_transition)
+            {
+                ResetCardState();
+            }
         }
 
 
@@ -189,17 +199,34 @@ public class CardControl : MonoBehaviour
     private void UpdateCardChoiceState(int index)
     {
 
+        StartCoroutine(ChoiceCard(index));
+
+
+    }
+
+    public IEnumerator ChoiceCard(int index)
+    {
+        _transition = true;
+        while (_timer < _choiceTransitionDuration)
+        {
+            _timer += Time.deltaTime;
+            card.gameObject.transform.Translate(Vector3.right * -index * 50f * Time.deltaTime);
+            yield return Time.deltaTime;
+        }
+
         if (index == 1)
         {
-            ResetElementPosition();
             SetupNewCard(cardIdentity.choiceID[0]);
-
         }
         if (index == -1)
         {
-            ResetElementPosition();
             SetupNewCard(cardIdentity.choiceID[1]);
         }
+        ResetElementPosition();
+        _timer = 0f;
+        _transition = false;
+        yield return null;
+
 
     }
 
@@ -208,7 +235,7 @@ public class CardControl : MonoBehaviour
         cardIdentity = cardManager.cardIdentities[index];
         text1.text = cardIdentity.choiceText1;
         text2.text = cardIdentity.choiceText2;
-        meshRenderer.material.mainTexture = cardIdentity.cardSprite ;
+        meshRenderer.material.mainTexture = cardIdentity.cardSprite;
         ChangeCard = false;
     }
 
