@@ -47,6 +47,10 @@ public class CardControl : MonoBehaviour
     private float _timer;
     private bool _transition;
 
+
+    [SerializeField] private GameObject _parentCard;
+    private Animator _animationCard;
+
     public Texture2D tex;
 
     private void Start()
@@ -59,14 +63,15 @@ public class CardControl : MonoBehaviour
         SetupNewCard(0);
 
 
-
         lastMousePos = Input.mousePosition;
-
+        
+        _animationCard.SetBool("ActiveCard", true);
 
     }
 
     private void InitComponent()
     {
+        _animationCard = card.GetComponentInParent<Animator>();
         cardManager = GetComponent<CardManager>();
         meshRenderer = card.GetComponent<MeshRenderer>();
     }
@@ -207,13 +212,18 @@ public class CardControl : MonoBehaviour
     public IEnumerator ChoiceCard(int index)
     {
         _transition = true;
+        _animationCard.SetBool("ActiveCard", false);
+        _animationCard.SetBool("Return", true);
         while (_timer < _choiceTransitionDuration)
         {
             _timer += Time.deltaTime;
-            card.gameObject.transform.Translate(Vector3.right * -index * 50f * Time.deltaTime);
+            card.transform.Translate(Vector3.right * -index * 50f * Time.deltaTime);
+            for (int i = 0; i < 3; i++)
+            {
+                rectArray[i].localPosition += Vector3.right * index * 50f ;
+            }
             yield return Time.deltaTime;
         }
-
         if (index == 1)
         {
             SetupNewCard(cardIdentity.choiceID[0]);
@@ -222,6 +232,8 @@ public class CardControl : MonoBehaviour
         {
             SetupNewCard(cardIdentity.choiceID[1]);
         }
+        _animationCard.SetBool("ActiveCard", true);
+        _animationCard.SetBool("Return", false);
         ResetElementPosition();
         _timer = 0f;
         _transition = false;
